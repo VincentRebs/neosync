@@ -350,7 +350,7 @@ func buildTableCol(record *buildTableColRequest) string {
 	}
 
 	if record.ColumnDefault != "" {
-		pieces = append(pieces, fmt.Sprintf("DEFAULT (%s)", record.ColumnDefault))
+		pieces = append(pieces, fmt.Sprintf("DEFAULT '%s'", record.ColumnDefault))
 	}
 
 	if record.IdentityType != nil && *record.IdentityType == "auto_increment" {
