@@ -15,6 +15,11 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+const (
+	columnDefaultDefault = "Default"
+	columnDefaultString  = "String"
+)
+
 type MysqlManager struct {
 	querier mysql_queries.Querier
 	pool    mysql_queries.DBTX
@@ -47,10 +52,10 @@ func (m *MysqlManager) GetDatabaseSchema(ctx context.Context) ([]*sqlmanager_sha
 
 		var columnDefaultType *string
 		if row.Extra.Valid && columnDefaultStr != "" && row.Extra.String == "" {
-			val := "String"
-			columnDefaultType = &val // With this type columnDefaultStr will be surronded by quotes when translated to SQL
+			val := columnDefaultString // With this type columnDefaultStr will be surrounded by quotes when translated to SQL
+			columnDefaultType = &val
 		} else if row.Extra.Valid && columnDefaultStr != "" && row.Extra.String != "" {
-			val := "Default" // With this type columnDefaultStr will be surronded by parentheses when translated to SQL
+			val := columnDefaultDefault // With this type columnDefaultStr will be surrounded by parentheses when translated to SQL
 			columnDefaultType = &val
 		}
 
@@ -299,10 +304,10 @@ func (m *MysqlManager) GetTableInitStatements(ctx context.Context, tables []*sql
 			}
 			var columnDefaultType *string
 			if identityType != nil && columnDefaultStr != "" && *identityType == "" {
-				val := "String"
-				columnDefaultType = &val // With this type columnDefaultStr will be surronded by quotes when translated to SQL
+				val := columnDefaultString // With this type columnDefaultStr will be surrounded by quotes when translated to SQL
+				columnDefaultType = &val
 			} else if identityType != nil && columnDefaultStr != "" && *identityType != "" {
-				val := "Default" // With this type columnDefaultStr will be surronded by parentheses when translated to SQL
+				val := columnDefaultDefault // With this type columnDefaultStr will be surrounded by parentheses when translated to SQL
 				columnDefaultType = &val
 			}
 			columnDefaultStr, err = EscapeMysqlDefaultColumn(columnDefaultStr, columnDefaultType)
@@ -336,7 +341,6 @@ func (m *MysqlManager) GetTableInitStatements(ctx context.Context, tables []*sql
 			}
 			info.AlterTableStatements = append(info.AlterTableStatements, stmt)
 		}
-		fmt.Println(info.CreateTableStatement)
 		output = append(output, info)
 	}
 	return output, nil
@@ -824,14 +828,14 @@ func EscapeMysqlColumn(col string) string {
 }
 
 func EscapeMysqlDefaultColumn(defaultColumnValue string, defaultColumnType *string) (string, error) {
-	defaultColumnTypes := []string{"String", "Default"}
+	defaultColumnTypes := []string{columnDefaultString, columnDefaultDefault}
 	if defaultColumnType == nil {
 		return defaultColumnValue, nil
 	}
-	if *defaultColumnType == "String" {
+	if *defaultColumnType == columnDefaultString {
 		return fmt.Sprintf("'%s'", defaultColumnValue), nil
 	}
-	if *defaultColumnType == "Default" {
+	if *defaultColumnType == columnDefaultDefault {
 		return fmt.Sprintf("(%s)", defaultColumnValue), nil
 	}
 	return fmt.Sprintf("(%s)", defaultColumnValue), fmt.Errorf("unsupported default column type: %s, currently supported types are: %v", *defaultColumnType, defaultColumnTypes)
